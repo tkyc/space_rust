@@ -6,6 +6,7 @@ use super::ship::ShipActor;
 pub struct ProjectileActor {
     pub pos_x: f32,
     pub pos_y: f32,
+    pub delta: f32,
     vertices: [[f32; 2]; 2],
 }
 
@@ -15,6 +16,9 @@ impl ProjectileActor {
 
     //Velocity of projectile
     pub const VELOCITY: f32 = 3.0;
+
+    //Change in velocity
+    pub const ACCELERATION: f32 = 0.5;
 
     pub const PROJECTILE_LENGTH: f32 = 20.0;
 
@@ -26,6 +30,7 @@ impl ProjectileActor {
             //Need ship position to orient projectile in front of ship
             pos_x: ship.pos_x,
             pos_y: ship.pos_y - 10.0,
+            delta: 1.0,
             vertices: ProjectileActor::DEFAULT_ORIENTATION,
         }
     }

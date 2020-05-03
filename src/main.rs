@@ -62,7 +62,9 @@ impl event::EventHandler for Main {
 
         for (i, projectile) in self.projectiles.iter_mut().enumerate() {
 
-            projectile.pos_y -= ProjectileActor::VELOCITY;
+            projectile.pos_y -= ProjectileActor::VELOCITY + projectile.delta;
+
+            projectile.delta += ProjectileActor::ACCELERATION;
 
             if projectile.pos_y < -ProjectileActor::PROJECTILE_LENGTH {
                 outofbounds_projectiles.push(i);
