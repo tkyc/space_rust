@@ -57,8 +57,7 @@ impl event::EventHandler for Main {
         //Update ships' current position
         self.ship.r#move(ctx);
 
-        //Update positions of all current visible projectiles on screen (TODO: multithread this --
-        //tons of projectiles cause lag)
+        //Update positions of all current visible projectiles on screen (TODO: multithread this -- tons of projectiles cause lag)
         let mut outofbounds_projectiles: Vec<usize> = Vec::new();
 
         for (i, projectile) in self.projectiles.iter_mut().enumerate() {

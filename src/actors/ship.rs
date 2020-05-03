@@ -1,3 +1,4 @@
+use std::time::Instant;
 use ggez::{graphics, Context, GameResult};
 use ggez::input::keyboard;
 use ggez::event::KeyCode;
@@ -8,12 +9,16 @@ use super::projectile::ProjectileActor;
 pub struct ShipActor {
     pub pos_x: f32,
     pub pos_y: f32,
+    lastshot: Instant,
     vertices: [[f32; 2]; 3],
 }
 
 
 
 impl ShipActor {
+
+    //Delay is in milliseconds
+    const SHOT_DELAY: u128 = 300;
 
     //Positioning offset from drawn ref points
     const DEFAULT_POS_X: f32 = crate::WINDOW_WIDTH / 2.0;
@@ -25,10 +30,11 @@ impl ShipActor {
     const RIGHT_ORIENTATION: [[f32; 2]; 3] = [[0.0, 0.0], [-10.0, 30.0], [5.0, 30.0]];
     const BRAKE_ORIENTATION: [[f32; 2]; 3] = [[0.0, 0.0], [-20.0, 30.0], [20.0, 30.0]];
 
-    pub fn new(pos_x: f32, pos_y: f32, vertices: [[f32; 2]; 3]) -> ShipActor {
+    pub fn new(pos_x: f32, pos_y: f32, lastshot: Instant, vertices: [[f32; 2]; 3]) -> ShipActor {
         ShipActor {
             pos_x,
             pos_y,
+            lastshot,
             vertices,
         }
     }
@@ -54,9 +60,17 @@ impl ShipActor {
     }
 
     pub fn shoot(&mut self, projectiles: &mut Vec<ProjectileActor>, ctx: &mut Context) {
-        if keyboard::is_key_pressed(ctx, KeyCode::Space) {
+
+        //One sec. delay between shots
+        if keyboard::is_key_pressed(ctx, KeyCode::Space)
+            && self.lastshot.elapsed().as_millis() > ShipActor::SHOT_DELAY {
+
             projectiles.push(ProjectileActor::new(self));
+
+            self.lastshot = Instant::now();
+
         }
+
     }
 
     pub fn draw_ship(&mut self, ctx: &mut Context) -> GameResult<graphics::Mesh> {
@@ -103,6 +117,7 @@ impl Default for ShipActor {
         ShipActor {
             pos_x: ShipActor::DEFAULT_POS_X,
             pos_y: ShipActor::DEFAULT_POS_Y,
+            lastshot: Instant::now(),
             vertices: ShipActor::DEFAULT_ORIENTATION,
         }
     }
