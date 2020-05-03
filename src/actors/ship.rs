@@ -9,6 +9,7 @@ use super::projectile::ProjectileActor;
 pub struct ShipActor {
     pub pos_x: f32,
     pub pos_y: f32,
+    delta: f32,
     lastshot: Instant,
     vertices: [[f32; 2]; 3],
 }
@@ -16,6 +17,8 @@ pub struct ShipActor {
 
 
 impl ShipActor {
+
+    const ACCELERATION: f32 = 0.5;
 
     //Delay is in milliseconds
     const SHOT_DELAY: u128 = 300;
@@ -30,10 +33,11 @@ impl ShipActor {
     const RIGHT_ORIENTATION: [[f32; 2]; 3] = [[0.0, 0.0], [-10.0, 30.0], [5.0, 30.0]];
     const BRAKE_ORIENTATION: [[f32; 2]; 3] = [[0.0, 0.0], [-20.0, 30.0], [20.0, 30.0]];
 
-    pub fn new(pos_x: f32, pos_y: f32, lastshot: Instant, vertices: [[f32; 2]; 3]) -> ShipActor {
+    pub fn new(pos_x: f32, pos_y: f32, delta: f32, lastshot: Instant, vertices: [[f32; 2]; 3]) -> ShipActor {
         ShipActor {
             pos_x,
             pos_y,
+            delta,
             lastshot,
             vertices,
         }
@@ -41,21 +45,25 @@ impl ShipActor {
 
     pub fn r#move(&mut self, ctx: &mut Context) {
 
+        let new_delta = self.delta;
+
         if keyboard::is_key_pressed(ctx, KeyCode::W) {
-            self.pos_y -= 1.0;
+            self.pos_y -= new_delta;
         }
 
         if keyboard::is_key_pressed(ctx, KeyCode::A) {
-            self.pos_x -= 1.0;
+            self.pos_x -= new_delta;
         }
 
         if keyboard::is_key_pressed(ctx, KeyCode::S) {
-            self.pos_y += 1.0;
+            self.pos_y += new_delta;
         }
 
         if keyboard::is_key_pressed(ctx, KeyCode::D) {
-            self.pos_x += 1.0;
+            self.pos_x += new_delta;
         }
+
+        self.delta += ShipActor::ACCELERATION;
 
     }
 
@@ -117,6 +125,7 @@ impl Default for ShipActor {
         ShipActor {
             pos_x: ShipActor::DEFAULT_POS_X,
             pos_y: ShipActor::DEFAULT_POS_Y,
+            delta: 0.0,
             lastshot: Instant::now(),
             vertices: ShipActor::DEFAULT_ORIENTATION,
         }

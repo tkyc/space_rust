@@ -23,14 +23,36 @@ struct Main {
 
 impl Main {
 
-    fn remove(&mut self, outofbounds_projectiles: Vec<usize>) {
+    fn free_projectiles(&mut self, outofbounds: Vec<usize>) {
 
-        for i in outofbounds_projectiles {
+        for i in outofbounds {
             self.projectiles.remove(i);
         }
 
         self.projectiles.shrink_to_fit();
 
+    }
+
+    fn move_projectiles(&mut self) -> Vec<usize> {
+
+        let mut outofbounds: Vec<usize> = Vec::new();
+
+        for (i, projectile) in self.projectiles.iter_mut().enumerate() {
+
+            projectile.r#move();
+
+            if projectile.pos_y < -ProjectileActor::PROJECTILE_LENGTH {
+                outofbounds.push(i);
+            }
+
+        }
+
+        outofbounds
+
+    }
+
+    fn move_ship(&mut self, ctx: &mut Context) {
+        self.ship.r#move(ctx);
     }
 
 }
@@ -54,25 +76,12 @@ impl event::EventHandler for Main {
 
     fn update(&mut self, ctx: &mut Context) -> GameResult {
 
-        //Update ships' current position
-        self.ship.r#move(ctx);
-
         //Update positions of all current visible projectiles on screen (TODO: multithread this -- tons of projectiles cause lag)
-        let mut outofbounds_projectiles: Vec<usize> = Vec::new();
+        let outofbounds = self.move_projectiles();
+        self.free_projectiles(outofbounds);
 
-        for (i, projectile) in self.projectiles.iter_mut().enumerate() {
-
-            projectile.pos_y -= ProjectileActor::VELOCITY + projectile.delta;
-
-            projectile.delta += ProjectileActor::ACCELERATION;
-
-            if projectile.pos_y < -ProjectileActor::PROJECTILE_LENGTH {
-                outofbounds_projectiles.push(i);
-            }
-
-        }
-
-        self.remove(outofbounds_projectiles);
+        //Update ships' current position
+        self.move_ship(ctx);
 
         Ok(())
 

@@ -6,7 +6,7 @@ use super::ship::ShipActor;
 pub struct ProjectileActor {
     pub pos_x: f32,
     pub pos_y: f32,
-    pub delta: f32,
+    delta: f32,
     vertices: [[f32; 2]; 2],
 }
 
@@ -14,13 +14,13 @@ pub struct ProjectileActor {
 
 impl ProjectileActor {
 
+    pub const PROJECTILE_LENGTH: f32 = 20.0;
+
     //Velocity of projectile
-    pub const VELOCITY: f32 = 3.0;
+    const VELOCITY: f32 = 3.0;
 
     //Change in velocity
-    pub const ACCELERATION: f32 = 0.5;
-
-    pub const PROJECTILE_LENGTH: f32 = 20.0;
+    const ACCELERATION: f32 = 0.5;
 
     //Drawn ref point -- mesh is drawn with origin as ref point
     const DEFAULT_ORIENTATION: [[f32; 2]; 2] = [[0.0, 0.0], [0.0, -ProjectileActor::PROJECTILE_LENGTH]];
@@ -33,6 +33,11 @@ impl ProjectileActor {
             delta: 1.0,
             vertices: ProjectileActor::DEFAULT_ORIENTATION,
         }
+    }
+
+    pub fn r#move(&mut self) {
+        self.pos_y -= ProjectileActor::VELOCITY + self.delta;
+        self.delta += ProjectileActor::ACCELERATION;
     }
 
     pub fn draw_projectile(&mut self, ctx: &mut Context) -> GameResult<graphics::Mesh> {
