@@ -21,9 +21,9 @@ impl ShipActor {
 
     const VELOCITY: f32 = 1.0;
 
-    const VELOCITY_LIMIT: f32 = 10.0;
+    const VELOCITY_LIMIT: f32 = 15.0;
 
-    const ACCELERATION: f32 = 1.3;
+    const ACCELERATION: f32 = 0.5;
 
     //Delay is in milliseconds
     const SHOT_DELAY: u128 = 300;
@@ -107,21 +107,26 @@ impl ShipActor {
         if keyboard::is_key_repeated(ctx) {
 
             //Accelerate
-            if self.accelerate && self.delta < ShipActor::VELOCITY_LIMIT {
-                self.delta *= ShipActor::ACCELERATION;
-            } else {
-                self.accelerate = false;
+            if self.accelerate {
+                self.delta += ShipActor::ACCELERATION;
+                if self.delta >= ShipActor::VELOCITY_LIMIT {
+                    self.accelerate = false;
+                }
             }
 
             //Deaccelerate
             if !self.accelerate {
-                self.delta *= -ShipActor::ACCELERATION;
-                if self.delta < ShipActor::VELOCITY {
+                self.delta += -ShipActor::ACCELERATION;
+                if self.delta <= ShipActor::VELOCITY {
                     self.delta = ShipActor::VELOCITY;
                     self.accelerate = true;
                 }
             }
 
+        }
+
+        if !keyboard::is_key_repeated(ctx) {
+            self.delta = ShipActor::VELOCITY;
         }
 
     }
