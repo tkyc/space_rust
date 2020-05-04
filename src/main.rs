@@ -1,11 +1,13 @@
 mod actors;
 
+use std::vec::Vec;
 use ggez;
 use ggez::event;
+use ggez::event::KeyCode;
+use ggez::input::keyboard::KeyMods;
 use ggez::{conf, Context, graphics, GameResult, nalgebra as na};
 use actors::projectile::ProjectileActor;
 use actors::ship::ShipActor;
-use std::vec::Vec;
 
 
 
@@ -23,17 +25,25 @@ struct Main {
 
 impl Main {
 
-    fn free_projectiles(&mut self, outofbounds: Vec<usize>) {
+    fn update_ship(&mut self, ctx: &mut Context) {
 
-        for i in outofbounds {
-            self.projectiles.remove(i);
-        }
+        self.ship.r#move(ctx);
 
-        self.projectiles.shrink_to_fit();
+        self.ship.shoot(&mut self.projectiles, ctx);
 
     }
 
-    fn move_projectiles(&mut self) -> Vec<usize> {
+    fn draw_ship(&mut self, ctx: &mut Context) -> GameResult {
+
+        let ship_mesh = self.ship.draw_mesh(ctx)?;
+
+        graphics::draw(ctx, &ship_mesh, (na::Point2::new(self.ship.pos_x, self.ship.pos_y),))?;
+
+        Ok(())
+
+    }
+
+    fn update_projectiles(&mut self) {
 
         let mut outofbounds: Vec<usize> = Vec::new();
 
@@ -47,12 +57,32 @@ impl Main {
 
         }
 
-        outofbounds
+        self.free_projectiles(outofbounds);
 
     }
 
-    fn move_ship(&mut self, ctx: &mut Context) {
-        self.ship.r#move(ctx);
+    fn draw_projectiles(&mut self, ctx: &mut Context) -> GameResult {
+
+        for projectile in &mut self.projectiles {
+
+            let projectile_mesh = projectile.draw_mesh(ctx)?;
+
+            graphics::draw(ctx, &projectile_mesh, (na::Point2::new(projectile.pos_x, projectile.pos_y),))?;
+
+        }
+
+        Ok(())
+
+    }
+
+    fn free_projectiles(&mut self, outofbounds: Vec<usize>) {
+
+        for i in outofbounds {
+            self.projectiles.remove(i);
+        }
+
+        self.projectiles.shrink_to_fit();
+
     }
 
 }
@@ -76,12 +106,9 @@ impl event::EventHandler for Main {
 
     fn update(&mut self, ctx: &mut Context) -> GameResult {
 
-        //Update positions of all current visible projectiles on screen (TODO: multithread this -- tons of projectiles cause lag)
-        let outofbounds = self.move_projectiles();
-        self.free_projectiles(outofbounds);
-
-        //Update ships' current position
-        self.move_ship(ctx);
+        //TODO: multithread actors
+        self.update_projectiles();
+        self.update_ship(ctx);
 
         Ok(())
 
@@ -92,21 +119,32 @@ impl event::EventHandler for Main {
         //Set background colour of game
         graphics::clear(ctx, graphics::Color::new(0.0, 0.0, 0.0, 0.0));
 
-        //ShipActor
-        let ship_mesh = self.ship.draw_ship(ctx)?;
-        self.ship.shoot(&mut self.projectiles, ctx);
-        graphics::draw(ctx, &ship_mesh, (na::Point2::new(self.ship.pos_x, self.ship.pos_y),))?;
-
-        //ProjectileActors
-        for projectile in &mut self.projectiles {
-            let projectile_mesh = projectile.draw_projectile(ctx)?;
-            graphics::draw(ctx, &projectile_mesh, (na::Point2::new(projectile.pos_x, projectile.pos_y),))?;
-        }
+        //Draw actors
+        self.draw_ship(ctx)?;
+        self.draw_projectiles(ctx)?;
 
         graphics::present(ctx)?;
 
         Ok(())
 
+    }
+
+    fn key_up_event(&mut self, _: &mut Context, key: KeyCode, _: KeyMods) {
+
+        match key {
+
+            KeyCode::J => {
+                self.ship.speedburst_keyup();
+            },
+
+            _ => (),
+
+        }
+
+    }
+
+    fn key_down_event(&mut self, _: &mut Context, _: KeyCode, _: KeyMods, _: bool) {
+        //TODO
     }
 
 }
@@ -122,7 +160,7 @@ pub fn main() -> GameResult {
     let state = &mut Main::default();
 
     let window_settings = conf::WindowMode::default()
-        .dimensions(WINDOW_WIDTH, WINDOW_HEIGHT);
+                                           .dimensions(WINDOW_WIDTH, WINDOW_HEIGHT);
 
     ggez::graphics::set_mode(ctx, window_settings)?;
 

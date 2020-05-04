@@ -9,9 +9,9 @@ use super::projectile::ProjectileActor;
 pub struct ShipActor {
     pub pos_x: f32,
     pub pos_y: f32,
-    delta: f32,
+    speedburst: (Instant, bool),
     lastshot: Instant,
-    accelerate: bool,
+    deltav: f32,
     vertices: [[f32; 2]; 3],
 }
 
@@ -21,12 +21,15 @@ impl ShipActor {
 
     const VELOCITY: f32 = 1.0;
 
-    const VELOCITY_LIMIT: f32 = 15.0;
+    const VELOCITY_LIMIT: f32 = 10.0;
 
-    const ACCELERATION: f32 = 0.5;
+    const ACCELERATION: f32 = 0.2;
 
     //Delay is in milliseconds
-    const SHOT_DELAY: u128 = 300;
+    const SHOT_DELAY: u128 = 200;
+
+    //Delay is in milliseconds
+    const BURST_DELAY: u128 = 1500;
 
     //Positioning offset from drawn ref points
     const DEFAULT_POS_X: f32 = crate::WINDOW_WIDTH / 2.0;
@@ -42,33 +45,34 @@ impl ShipActor {
         ShipActor {
             pos_x: pos_x,
             pos_y: pos_y,
-            delta: 1.0,
+            speedburst: (Instant::now(), false),
             lastshot: Instant::now(),
-            accelerate: true,
+            deltav: 1.0,
             vertices: ShipActor::DEFAULT_ORIENTATION,
         }
     }
 
     pub fn r#move(&mut self, ctx: &mut Context) {
 
+        //Multiple ifs for simultaneous key presses
         if keyboard::is_key_pressed(ctx, KeyCode::W) {
-            self.pos_y -= ShipActor::VELOCITY + self.delta;
-            self.calculate_acceleration(ctx);
+            self.speedburst_keydown(ctx);
+            self.pos_y -= ShipActor::VELOCITY + self.deltav;
         }
 
         if keyboard::is_key_pressed(ctx, KeyCode::A) {
-            self.pos_x -= ShipActor::VELOCITY + self.delta;
-            self.calculate_acceleration(ctx);
+            self.speedburst_keydown(ctx);
+            self.pos_x -= ShipActor::VELOCITY + self.deltav;
         }
 
         if keyboard::is_key_pressed(ctx, KeyCode::S) {
-            self.pos_y += ShipActor::VELOCITY + self.delta;
-            self.calculate_acceleration(ctx);
+            self.speedburst_keydown(ctx);
+            self.pos_y += ShipActor::VELOCITY + self.deltav;
         }
 
         if keyboard::is_key_pressed(ctx, KeyCode::D) {
-            self.pos_x += ShipActor::VELOCITY + self.delta;
-            self.calculate_acceleration(ctx);
+            self.speedburst_keydown(ctx);
+            self.pos_x += ShipActor::VELOCITY + self.deltav;
         }
 
     }
@@ -87,7 +91,7 @@ impl ShipActor {
 
     }
 
-    pub fn draw_ship(&mut self, ctx: &mut Context) -> GameResult<graphics::Mesh> {
+    pub fn draw_mesh(&mut self, ctx: &mut Context) -> GameResult<graphics::Mesh> {
 
         let orientation: [[f32; 2]; 3] = if keyboard::is_key_pressed(ctx, KeyCode::A) { ShipActor::LEFT_ORIENTATION }
                                     else if keyboard::is_key_pressed(ctx, KeyCode::S) { ShipActor::BRAKE_ORIENTATION }
@@ -102,31 +106,61 @@ impl ShipActor {
 
     }
 
-    fn calculate_acceleration(&mut self, ctx: &mut Context) {
+    //TODO: Speed burst bar
+    //On KeyCode::J up deaccelerate and reset speed burst timer
+    pub fn speedburst_keyup(&mut self) {
 
-        if keyboard::is_key_repeated(ctx) {
+        self.reset_speedburst_timer();
 
-            //Accelerate
-            if self.accelerate {
-                self.delta += ShipActor::ACCELERATION;
-                if self.delta >= ShipActor::VELOCITY_LIMIT {
-                    self.accelerate = false;
-                }
-            }
+        self.deaccelerate();
 
-            //Deaccelerate
-            if !self.accelerate {
-                self.delta += -ShipActor::ACCELERATION;
-                if self.delta <= ShipActor::VELOCITY {
-                    self.delta = ShipActor::VELOCITY;
-                    self.accelerate = true;
-                }
-            }
+    }
+
+    //On KeyCode::J down accelerate the ship to max velocity
+    fn speedburst_keydown(&mut self, ctx: &mut Context) {
+
+        let (_, can_burst) = self.speedburst;
+
+        if keyboard::is_key_pressed(ctx, KeyCode::J) && can_burst {
+
+            self.accelerate();
+
+        } else {
+
+            self.deaccelerate();
 
         }
 
-        if !keyboard::is_key_repeated(ctx) {
-            self.delta = ShipActor::VELOCITY;
+    }
+
+    //On completion of a full speed burst or partial speed burst -- reset the timer
+    fn reset_speedburst_timer(&mut self) {
+        self.speedburst = (Instant::now(), false);
+    }
+
+    fn accelerate(&mut self) {
+
+        self.deltav += ShipActor::ACCELERATION;
+
+        if self.deltav >= ShipActor::VELOCITY_LIMIT {
+
+            self.reset_speedburst_timer();
+
+        }
+
+    }
+
+    fn deaccelerate(&mut self) {
+
+        let (last_burst, can_burst) = &mut self.speedburst;
+
+        self.deltav = ShipActor::VELOCITY;
+
+        //Time elapsed since last speed burst must be greater than the delay
+        if last_burst.elapsed().as_millis() >= ShipActor::BURST_DELAY {
+
+            *can_burst = true;
+
         }
 
     }
@@ -141,9 +175,9 @@ impl Default for ShipActor {
         ShipActor {
             pos_x: ShipActor::DEFAULT_POS_X,
             pos_y: ShipActor::DEFAULT_POS_Y,
-            delta: 1.0,
+            speedburst: (Instant::now(), false),
             lastshot: Instant::now(),
-            accelerate: true,
+            deltav: 1.0,
             vertices: ShipActor::DEFAULT_ORIENTATION,
         }
     }
