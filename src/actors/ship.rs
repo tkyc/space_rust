@@ -11,6 +11,7 @@ pub struct ShipActor {
     pub pos_y: f32,
     delta: f32,
     lastshot: Instant,
+    accelerate: bool,
     vertices: [[f32; 2]; 3],
 }
 
@@ -18,7 +19,11 @@ pub struct ShipActor {
 
 impl ShipActor {
 
-    const ACCELERATION: f32 = 0.5;
+    const VELOCITY: f32 = 1.0;
+
+    const VELOCITY_LIMIT: f32 = 10.0;
+
+    const ACCELERATION: f32 = 1.3;
 
     //Delay is in milliseconds
     const SHOT_DELAY: u128 = 300;
@@ -33,37 +38,38 @@ impl ShipActor {
     const RIGHT_ORIENTATION: [[f32; 2]; 3] = [[0.0, 0.0], [-10.0, 30.0], [5.0, 30.0]];
     const BRAKE_ORIENTATION: [[f32; 2]; 3] = [[0.0, 0.0], [-20.0, 30.0], [20.0, 30.0]];
 
-    pub fn new(pos_x: f32, pos_y: f32, delta: f32, lastshot: Instant, vertices: [[f32; 2]; 3]) -> ShipActor {
+    pub fn new(pos_x: f32, pos_y: f32) -> ShipActor {
         ShipActor {
-            pos_x,
-            pos_y,
-            delta,
-            lastshot,
-            vertices,
+            pos_x: pos_x,
+            pos_y: pos_y,
+            delta: 1.0,
+            lastshot: Instant::now(),
+            accelerate: true,
+            vertices: ShipActor::DEFAULT_ORIENTATION,
         }
     }
 
     pub fn r#move(&mut self, ctx: &mut Context) {
 
-        let new_delta = self.delta;
-
         if keyboard::is_key_pressed(ctx, KeyCode::W) {
-            self.pos_y -= new_delta;
+            self.pos_y -= ShipActor::VELOCITY + self.delta;
+            self.calculate_acceleration(ctx);
         }
 
         if keyboard::is_key_pressed(ctx, KeyCode::A) {
-            self.pos_x -= new_delta;
+            self.pos_x -= ShipActor::VELOCITY + self.delta;
+            self.calculate_acceleration(ctx);
         }
 
         if keyboard::is_key_pressed(ctx, KeyCode::S) {
-            self.pos_y += new_delta;
+            self.pos_y += ShipActor::VELOCITY + self.delta;
+            self.calculate_acceleration(ctx);
         }
 
         if keyboard::is_key_pressed(ctx, KeyCode::D) {
-            self.pos_x += new_delta;
+            self.pos_x += ShipActor::VELOCITY + self.delta;
+            self.calculate_acceleration(ctx);
         }
-
-        self.delta += ShipActor::ACCELERATION;
 
     }
 
@@ -83,35 +89,40 @@ impl ShipActor {
 
     pub fn draw_ship(&mut self, ctx: &mut Context) -> GameResult<graphics::Mesh> {
 
-        if keyboard::is_key_pressed(ctx, KeyCode::A) {
-            return graphics::Mesh::from_triangles(
-                ctx,
-                &ShipActor::LEFT_ORIENTATION,
-                graphics::WHITE,
-            )
-        }
-
-        if keyboard::is_key_pressed(ctx, KeyCode::D) {
-            return graphics::Mesh::from_triangles(
-                ctx,
-                &ShipActor::RIGHT_ORIENTATION,
-                graphics::WHITE,
-            )
-        }
-
-        if keyboard::is_key_pressed(ctx, KeyCode::S) {
-            return graphics::Mesh::from_triangles(
-                ctx,
-                &ShipActor::BRAKE_ORIENTATION,
-                graphics::WHITE,
-            )
-        }
+        let orientation: [[f32; 2]; 3] = if keyboard::is_key_pressed(ctx, KeyCode::A) { ShipActor::LEFT_ORIENTATION }
+                                    else if keyboard::is_key_pressed(ctx, KeyCode::S) { ShipActor::BRAKE_ORIENTATION }
+                                    else if keyboard::is_key_pressed(ctx, KeyCode::D) { ShipActor::RIGHT_ORIENTATION }
+                                    else { ShipActor::DEFAULT_ORIENTATION };
 
         graphics::Mesh::from_triangles(
             ctx,
-            &ShipActor::DEFAULT_ORIENTATION,
+            &orientation,
             graphics::WHITE,
         )
+
+    }
+
+    fn calculate_acceleration(&mut self, ctx: &mut Context) {
+
+        if keyboard::is_key_repeated(ctx) {
+
+            //Accelerate
+            if self.accelerate && self.delta < ShipActor::VELOCITY_LIMIT {
+                self.delta *= ShipActor::ACCELERATION;
+            } else {
+                self.accelerate = false;
+            }
+
+            //Deaccelerate
+            if !self.accelerate {
+                self.delta *= -ShipActor::ACCELERATION;
+                if self.delta < ShipActor::VELOCITY {
+                    self.delta = ShipActor::VELOCITY;
+                    self.accelerate = true;
+                }
+            }
+
+        }
 
     }
 
@@ -125,8 +136,9 @@ impl Default for ShipActor {
         ShipActor {
             pos_x: ShipActor::DEFAULT_POS_X,
             pos_y: ShipActor::DEFAULT_POS_Y,
-            delta: 0.0,
+            delta: 1.0,
             lastshot: Instant::now(),
+            accelerate: true,
             vertices: ShipActor::DEFAULT_ORIENTATION,
         }
     }

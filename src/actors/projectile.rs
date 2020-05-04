@@ -20,7 +20,7 @@ impl ProjectileActor {
     const VELOCITY: f32 = 3.0;
 
     //Change in velocity
-    const ACCELERATION: f32 = 0.5;
+    const ACCELERATION: f32 = 1.5;
 
     //Drawn ref point -- mesh is drawn with origin as ref point
     const DEFAULT_ORIENTATION: [[f32; 2]; 2] = [[0.0, 0.0], [0.0, -ProjectileActor::PROJECTILE_LENGTH]];
@@ -37,7 +37,7 @@ impl ProjectileActor {
 
     pub fn r#move(&mut self) {
         self.pos_y -= ProjectileActor::VELOCITY + self.delta;
-        self.delta += ProjectileActor::ACCELERATION;
+        self.delta *= ProjectileActor::ACCELERATION;
     }
 
     pub fn draw_projectile(&mut self, ctx: &mut Context) -> GameResult<graphics::Mesh> {
