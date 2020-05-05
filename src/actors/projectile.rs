@@ -1,4 +1,4 @@
-use ggez::{graphics, Context, GameResult};
+use ggez::{ graphics, Context, GameResult, nalgebra as na };
 use super::ship::ShipActor;
 
 
@@ -6,8 +6,8 @@ use super::ship::ShipActor;
 pub struct ProjectileActor {
     pub pos_x: f32,
     pub pos_y: f32,
+    pub angle: f32,
     deltav: f32,
-    vertices: [[f32; 2]; 2],
 }
 
 
@@ -16,37 +16,43 @@ impl ProjectileActor {
 
     pub const PROJECTILE_LENGTH: f32 = 20.0;
 
-    //Velocity of projectile
-    const VELOCITY: f32 = 3.0;
+    const VELOCITY: f32 = 1.0;
 
-    //Change in velocity
-    const ACCELERATION: f32 = 1.5;
-
-    //Drawn ref point -- mesh is drawn with origin as ref point
-    const DEFAULT_ORIENTATION: [[f32; 2]; 2] = [[0.0, 0.0], [0.0, -ProjectileActor::PROJECTILE_LENGTH]];
+    //Change in velocity (change in deltav)
+    const ACCELERATION: f32 = 1.2;
 
     pub fn new(ship: &ShipActor) -> ProjectileActor {
         ProjectileActor {
             //Need ship position to orient projectile in front of ship
             pos_x: ship.pos_x,
-            pos_y: ship.pos_y - 10.0,
-            deltav: 1.0,
-            vertices: ProjectileActor::DEFAULT_ORIENTATION,
+            pos_y: ship.pos_y,
+            angle: ship.angle,
+            deltav: ProjectileActor::VELOCITY,
         }
+
     }
 
     pub fn r#move(&mut self) {
 
-        self.pos_y -= ProjectileActor::VELOCITY + self.deltav;
+        let (y, x) = (self.angle.cos(), self.angle.sin());
 
+        self.pos_x += x * self.deltav;
+        self.pos_y -= y * self.deltav;
         self.deltav *= ProjectileActor::ACCELERATION;
 
     }
 
-    pub fn draw_mesh(&mut self, ctx: &mut Context) -> GameResult<graphics::Mesh> {
+    //Drawn ref point -- mesh is drawn with origin as ref point
+    pub fn draw_mesh(&self, ctx: &mut Context) -> GameResult<graphics::Mesh> {
+
+        let rot = na::geometry::Rotation2::new(self.angle);
+
+        let orientation = [rot * na::Point2::new(0.0, 0.0),
+                           rot * na::Point2::new(0.0, -ProjectileActor::PROJECTILE_LENGTH)];
+
         graphics::Mesh::new_line(
             ctx,
-            &self.vertices,
+            &orientation,
             1.0,
             graphics::WHITE,
         )

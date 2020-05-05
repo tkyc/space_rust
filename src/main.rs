@@ -5,12 +5,12 @@ use ggez;
 use ggez::event;
 use ggez::event::KeyCode;
 use ggez::input::keyboard::KeyMods;
-use ggez::{conf, Context, graphics, GameResult, nalgebra as na};
+use ggez::{ conf, Context, graphics, GameResult, nalgebra as na };
 use actors::projectile::ProjectileActor;
 use actors::ship::ShipActor;
 
 
-
+//TODO: Go over unnecessary &mut
 const WINDOW_WIDTH: f32 = 800.0;
 const WINDOW_HEIGHT: f32 = 400.0;
 
@@ -75,6 +75,7 @@ impl Main {
 
     }
 
+    //TODO: Need to recode free
     fn free_projectiles(&mut self, outofbounds: Vec<usize>) {
 
         for i in outofbounds {

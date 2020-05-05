@@ -1,5 +1,6 @@
+use std::f32;
 use std::time::Instant;
-use ggez::{graphics, Context, GameResult};
+use ggez::{ graphics, Context, GameResult, nalgebra as na };
 use ggez::input::keyboard;
 use ggez::event::KeyCode;
 use super::projectile::ProjectileActor;
@@ -9,46 +10,40 @@ use super::projectile::ProjectileActor;
 pub struct ShipActor {
     pub pos_x: f32,
     pub pos_y: f32,
-    speedburst: (Instant, bool),
-    lastshot: Instant,
+    pub angle: f32,
     deltav: f32,
-    vertices: [[f32; 2]; 3],
+    lastshot: Instant,
+    speedburst: (Instant, bool),
 }
 
 
 
 impl ShipActor {
 
-    const VELOCITY: f32 = 1.0;
+    const VELOCITY: f32 = 2.0;
 
-    const VELOCITY_LIMIT: f32 = 10.0;
+    const VELOCITY_LIMIT: f32 = 20.0;
 
-    const ACCELERATION: f32 = 0.2;
+    const ACCELERATION: f32 = 1.1;
 
-    //Delay is in milliseconds
-    const SHOT_DELAY: u128 = 200;
+    const SHOT_DELAY: u128 = 200; //ms
 
-    //Delay is in milliseconds
-    const BURST_DELAY: u128 = 1500;
+    const BURST_DELAY: u128 = 1000; //ms
 
     //Positioning offset from drawn ref points
     const DEFAULT_POS_X: f32 = crate::WINDOW_WIDTH / 2.0;
-    const DEFAULT_POS_Y: f32 = crate::WINDOW_HEIGHT / 2.0 + 300.0;
+    const DEFAULT_POS_Y: f32 = crate::WINDOW_HEIGHT / 2.0 + 100.0;
 
-    //Drawn ref points -- meshes are drawn with origin as ref point
-    const DEFAULT_ORIENTATION: [[f32; 2]; 3] = [[0.0, 0.0], [-10.0, 30.0], [10.0, 30.0]];
-    const LEFT_ORIENTATION: [[f32; 2]; 3] = [[0.0, 0.0], [-5.0, 30.0], [10.0, 30.0]];
-    const RIGHT_ORIENTATION: [[f32; 2]; 3] = [[0.0, 0.0], [-10.0, 30.0], [5.0, 30.0]];
-    const BRAKE_ORIENTATION: [[f32; 2]; 3] = [[0.0, 0.0], [-20.0, 30.0], [20.0, 30.0]];
 
+    #[allow(dead_code)]
     pub fn new(pos_x: f32, pos_y: f32) -> ShipActor {
         ShipActor {
             pos_x: pos_x,
             pos_y: pos_y,
-            speedburst: (Instant::now(), false),
+            angle: 0.0,
+            deltav: ShipActor::VELOCITY,
             lastshot: Instant::now(),
-            deltav: 1.0,
-            vertices: ShipActor::DEFAULT_ORIENTATION,
+            speedburst: (Instant::now(), false),
         }
     }
 
@@ -56,23 +51,31 @@ impl ShipActor {
 
         //Multiple ifs for simultaneous key presses
         if keyboard::is_key_pressed(ctx, KeyCode::W) {
-            self.speedburst_keydown(ctx);
-            self.pos_y -= ShipActor::VELOCITY + self.deltav;
-        }
 
-        if keyboard::is_key_pressed(ctx, KeyCode::A) {
+            let (y, x) = self.get_direction_vector();
+
             self.speedburst_keydown(ctx);
-            self.pos_x -= ShipActor::VELOCITY + self.deltav;
+
+            self.pos_x += x * self.deltav;
+            self.pos_y -= y * self.deltav;
         }
 
         if keyboard::is_key_pressed(ctx, KeyCode::S) {
-            self.speedburst_keydown(ctx);
-            self.pos_y += ShipActor::VELOCITY + self.deltav;
+
+            //Backpedal is slower and can't speed burst
+            let (y, x) = self.get_direction_vector();
+
+            self.pos_x -= x;
+            self.pos_y += y;
+
+        }
+
+        if keyboard::is_key_pressed(ctx, KeyCode::A) {
+            self.angle += 0.05;
         }
 
         if keyboard::is_key_pressed(ctx, KeyCode::D) {
-            self.speedburst_keydown(ctx);
-            self.pos_x += ShipActor::VELOCITY + self.deltav;
+            self.angle -= 0.05;
         }
 
     }
@@ -91,12 +94,19 @@ impl ShipActor {
 
     }
 
-    pub fn draw_mesh(&mut self, ctx: &mut Context) -> GameResult<graphics::Mesh> {
+    //Get the current direction the ship is facing
+    pub fn get_direction_vector(&self) -> (f32, f32) {
+        (self.angle.cos(), self.angle.sin())
+    }
 
-        let orientation: [[f32; 2]; 3] = if keyboard::is_key_pressed(ctx, KeyCode::A) { ShipActor::LEFT_ORIENTATION }
-                                    else if keyboard::is_key_pressed(ctx, KeyCode::S) { ShipActor::BRAKE_ORIENTATION }
-                                    else if keyboard::is_key_pressed(ctx, KeyCode::D) { ShipActor::RIGHT_ORIENTATION }
-                                    else { ShipActor::DEFAULT_ORIENTATION };
+    //Drawn ref points -- mesh is drawn with origin as ref point
+    pub fn draw_mesh(&self, ctx: &mut Context) -> GameResult<graphics::Mesh> {
+
+        let rot = na::geometry::Rotation2::new(self.angle);
+
+        let orientation = [rot * na::Point2::new(0.0, 0.0),
+                           rot * na::Point2::new(-10.0, 30.0),
+                           rot * na::Point2::new(10.0, 30.0)];
 
         graphics::Mesh::from_triangles(
             ctx,
@@ -140,7 +150,7 @@ impl ShipActor {
 
     fn accelerate(&mut self) {
 
-        self.deltav += ShipActor::ACCELERATION;
+        self.deltav *= ShipActor::ACCELERATION;
 
         if self.deltav >= ShipActor::VELOCITY_LIMIT {
 
@@ -175,10 +185,10 @@ impl Default for ShipActor {
         ShipActor {
             pos_x: ShipActor::DEFAULT_POS_X,
             pos_y: ShipActor::DEFAULT_POS_Y,
-            speedburst: (Instant::now(), false),
+            angle: 0.0,
+            deltav: ShipActor::VELOCITY,
             lastshot: Instant::now(),
-            deltav: 1.0,
-            vertices: ShipActor::DEFAULT_ORIENTATION,
+            speedburst: (Instant::now(), false),
         }
     }
 
