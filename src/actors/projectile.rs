@@ -14,7 +14,7 @@ pub struct ProjectileActor {
 
 impl ProjectileActor {
 
-    pub const PROJECTILE_LENGTH: f32 = 20.0;
+    const PROJECTILE_LENGTH: f32 = 30.0;
 
     const VELOCITY: f32 = 1.0;
 

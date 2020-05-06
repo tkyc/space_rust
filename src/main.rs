@@ -8,6 +8,7 @@ use ggez::input::keyboard::KeyMods;
 use ggez::{ conf, Context, graphics, GameResult, nalgebra as na };
 use actors::projectile::ProjectileActor;
 use actors::ship::ShipActor;
+use actors::enemy::EnemyActor;
 
 
 //TODO: Go over unnecessary &mut
@@ -19,6 +20,7 @@ const WINDOW_HEIGHT: f32 = 400.0;
 struct Main {
     ship: ShipActor,
     projectiles: Vec<ProjectileActor>,
+    enemies: Vec<EnemyActor>,
 }
 
 
@@ -47,11 +49,17 @@ impl Main {
 
         let mut outofbounds: Vec<usize> = Vec::new();
 
+        //200.0 offset b/c noticed pixel dimensions never change from 800*600 despite explicit definition -- bug?
+        let is_inbounds = |p: &ProjectileActor| p.pos_x <= WINDOW_WIDTH &&
+                                                p.pos_x >= 0.0 &&
+                                                p.pos_y <= WINDOW_HEIGHT + 200.0 &&
+                                                p.pos_y >= 0.0;
+
         for (i, projectile) in self.projectiles.iter_mut().enumerate() {
 
             projectile.r#move();
 
-            if projectile.pos_y < -ProjectileActor::PROJECTILE_LENGTH {
+            if !is_inbounds(projectile) {
                 outofbounds.push(i);
             }
 
@@ -86,6 +94,32 @@ impl Main {
 
     }
 
+    fn update_enemies(&mut self, ctx: &mut Context) {
+
+        for enemy in &mut self.enemies {
+
+            //TODO: Calc. angle and dir.
+
+            enemy.r#move(ctx);
+
+        }
+
+    }
+
+    fn draw_enemies(&mut self, ctx: &mut Context) -> GameResult {
+
+        for enemy in &mut self.enemies {
+
+            let enemy_mesh = enemy.draw_mesh(ctx)?;
+
+            graphics::draw(ctx, &enemy_mesh, (na::Point2::new(enemy.pos_x, enemy.pos_y),))?;
+
+        }
+
+        Ok(())
+
+    }
+
 }
 
 
@@ -96,6 +130,7 @@ impl Default for Main {
         Main {
             ship: ShipActor::default(),
             projectiles: Vec::new(),
+            enemies: Vec::new(),
         }
     }
 
@@ -123,6 +158,7 @@ impl event::EventHandler for Main {
         //Draw actors
         self.draw_ship(ctx)?;
         self.draw_projectiles(ctx)?;
+        self.draw_enemies(ctx);
 
         graphics::present(ctx)?;
 
@@ -136,6 +172,7 @@ impl event::EventHandler for Main {
 
             KeyCode::J => {
                 self.ship.speedburst_keyup();
+                self.enemies.push(EnemyActor::spawn()); //TODO: Testing -- remove
             },
 
             _ => (),
