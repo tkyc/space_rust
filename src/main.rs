@@ -100,7 +100,7 @@ impl Main {
 
             //TODO: Calc. angle and dir.
 
-            enemy.r#move(ctx);
+            enemy.r#move(&self.ship, ctx);
 
         }
 
@@ -145,6 +145,7 @@ impl event::EventHandler for Main {
         //TODO: multithread actors
         self.update_projectiles();
         self.update_ship(ctx);
+        self.update_enemies(ctx);
 
         Ok(())
 

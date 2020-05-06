@@ -1,5 +1,8 @@
-use ggez::{ graphics, Context, GameResult, nalgebra as na };
+use std::f32;
 use rand::Rng;
+use ggez::{ graphics, Context, GameResult, nalgebra as na };
+use super::ship::ShipActor;
+
 
 
 pub struct EnemyActor {
@@ -14,7 +17,7 @@ pub struct EnemyActor {
 
 impl EnemyActor {
 
-    const VELOCITY: f32 = 1.0;
+    const VELOCITY: f32 = 0.5;
 
     const HITPOINTS: u8 = 5;
 
@@ -43,8 +46,16 @@ impl EnemyActor {
 
     }
 
-    pub fn r#move(&mut self, ctx: &mut Context) {
-        //TODO
+    pub fn r#move(&mut self, ship: &ShipActor, ctx: &mut Context) {
+
+        //Get the angle to face the player ship
+        self.angle = -(self.pos_x - ship.pos_x).atan2(self.pos_y - ship.pos_y);
+
+        let (y, x) = (self.angle.cos(), self.angle.sin());
+
+        self.pos_x += x * self.deltav;
+        self.pos_y -= y * self.deltav;
+
     }
 
     pub fn draw_mesh(&self, ctx: &mut Context) -> GameResult<graphics::Mesh> {
