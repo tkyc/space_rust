@@ -32,7 +32,13 @@ impl ProjectileActor {
 
     }
 
-    pub fn r#move(&mut self) {
+}
+
+
+
+impl super::Actor for ProjectileActor {
+
+    fn r#move(&mut self, _ctx: &mut Context) {
 
         let (y, x) = (self.angle.cos(), self.angle.sin());
 
@@ -43,7 +49,7 @@ impl ProjectileActor {
     }
 
     //Drawn ref point -- mesh is drawn with origin as ref point
-    pub fn draw_mesh(&self, ctx: &mut Context) -> GameResult<graphics::Mesh> {
+    fn draw_mesh(&self, ctx: &mut Context) -> GameResult<graphics::Mesh> {
 
         let rot = na::geometry::Rotation2::new(self.angle);
 

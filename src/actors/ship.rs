@@ -47,39 +47,6 @@ impl ShipActor {
         }
     }
 
-    pub fn r#move(&mut self, ctx: &mut Context) {
-
-        //Multiple ifs for simultaneous key presses
-        if keyboard::is_key_pressed(ctx, KeyCode::W) {
-
-            let (y, x) = self.get_direction_vector();
-
-            self.speedburst_keydown(ctx);
-
-            self.pos_x += x * self.deltav;
-            self.pos_y -= y * self.deltav;
-        }
-
-        if keyboard::is_key_pressed(ctx, KeyCode::S) {
-
-            //Backpedal is slower and can't speed burst
-            let (y, x) = self.get_direction_vector();
-
-            self.pos_x -= x;
-            self.pos_y += y;
-
-        }
-
-        if keyboard::is_key_pressed(ctx, KeyCode::A) {
-            self.angle += 0.05;
-        }
-
-        if keyboard::is_key_pressed(ctx, KeyCode::D) {
-            self.angle -= 0.05;
-        }
-
-    }
-
     pub fn shoot(&mut self, projectiles: &mut Vec<ProjectileActor>, ctx: &mut Context) {
 
         //One sec. delay between shots
@@ -97,23 +64,6 @@ impl ShipActor {
     //Get the current direction the ship is facing
     pub fn get_direction_vector(&self) -> (f32, f32) {
         (self.angle.cos(), self.angle.sin())
-    }
-
-    //Drawn ref points -- mesh is drawn with origin as ref point
-    pub fn draw_mesh(&self, ctx: &mut Context) -> GameResult<graphics::Mesh> {
-
-        let rot = na::geometry::Rotation2::new(self.angle);
-
-        let orientation = [rot * na::Point2::new(0.0, 0.0),
-                           rot * na::Point2::new(-10.0, 30.0),
-                           rot * na::Point2::new(10.0, 30.0)];
-
-        graphics::Mesh::from_triangles(
-            ctx,
-            &orientation,
-            graphics::WHITE,
-        )
-
     }
 
     //TODO: Speed burst bar
@@ -172,6 +122,62 @@ impl ShipActor {
             *can_burst = true;
 
         }
+
+    }
+
+}
+
+
+
+impl super::Actor for ShipActor {
+
+    fn r#move(&mut self, ctx: &mut Context) {
+
+        //Multiple ifs for simultaneous key presses
+        if keyboard::is_key_pressed(ctx, KeyCode::W) {
+
+            let (y, x) = self.get_direction_vector();
+
+            self.speedburst_keydown(ctx);
+
+            self.pos_x += x * self.deltav;
+            self.pos_y -= y * self.deltav;
+        }
+
+        if keyboard::is_key_pressed(ctx, KeyCode::S) {
+
+            //Backpedal is slower and can't speed burst
+            let (y, x) = self.get_direction_vector();
+
+            self.pos_x -= x;
+            self.pos_y += y;
+
+        }
+
+        if keyboard::is_key_pressed(ctx, KeyCode::A) {
+            self.angle += 0.05;
+        }
+
+        if keyboard::is_key_pressed(ctx, KeyCode::D) {
+            self.angle -= 0.05;
+        }
+
+    }
+
+    //Drawn ref points -- mesh is drawn with origin as ref point
+    fn draw_mesh(&self, ctx: &mut Context) -> GameResult<graphics::Mesh> {
+
+        let rot = na::geometry::Rotation2::new(self.angle);
+
+        let orientation = [rot * na::Point2::new(0.0, 0.0),
+                           rot * na::Point2::new(-10.0, 30.0),
+                           rot * na::Point2::new(10.0, 30.0)];
+
+        graphics::Mesh::from_triangles(
+            ctx,
+            &orientation,
+            graphics::WHITE,
+        )
 
     }
 

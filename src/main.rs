@@ -6,12 +6,14 @@ use ggez::event;
 use ggez::event::KeyCode;
 use ggez::input::keyboard::KeyMods;
 use ggez::{ conf, Context, graphics, GameResult, nalgebra as na };
+use actors::Actor;
 use actors::projectile::ProjectileActor;
 use actors::ship::ShipActor;
 use actors::enemy::EnemyActor;
 
 
 //TODO: Go over unnecessary &mut
+//TODO: Refactor actors to implement traits for polymorphic calls
 const WINDOW_WIDTH: f32 = 800.0;
 const WINDOW_HEIGHT: f32 = 400.0;
 
@@ -45,7 +47,7 @@ impl Main {
 
     }
 
-    fn update_projectiles(&mut self) {
+    fn update_projectiles(&mut self, ctx: &mut Context) {
 
         let mut outofbounds: Vec<usize> = Vec::new();
 
@@ -57,7 +59,7 @@ impl Main {
 
         for (i, projectile) in self.projectiles.iter_mut().enumerate() {
 
-            projectile.r#move();
+            projectile.r#move(ctx);
 
             if !is_inbounds(projectile) {
                 outofbounds.push(i);
@@ -98,9 +100,9 @@ impl Main {
 
         for enemy in &mut self.enemies {
 
-            //TODO: Calc. angle and dir.
+            enemy.face_player_ship(&self.ship);
 
-            enemy.r#move(&self.ship, ctx);
+            enemy.r#move(ctx);
 
         }
 
@@ -143,7 +145,7 @@ impl event::EventHandler for Main {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
 
         //TODO: multithread actors
-        self.update_projectiles();
+        self.update_projectiles(ctx);
         self.update_ship(ctx);
         self.update_enemies(ctx);
 
@@ -159,7 +161,7 @@ impl event::EventHandler for Main {
         //Draw actors
         self.draw_ship(ctx)?;
         self.draw_projectiles(ctx)?;
-        self.draw_enemies(ctx);
+        self.draw_enemies(ctx)?;
 
         graphics::present(ctx)?;
 

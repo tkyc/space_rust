@@ -17,7 +17,7 @@ pub struct EnemyActor {
 
 impl EnemyActor {
 
-    const VELOCITY: f32 = 0.5;
+    const VELOCITY: f32 = 0.1;
 
     const HITPOINTS: u8 = 5;
 
@@ -46,19 +46,31 @@ impl EnemyActor {
 
     }
 
-    pub fn r#move(&mut self, ship: &ShipActor, ctx: &mut Context) {
-
+    //Call before moving enemy actor to get direction of player ship
+    pub fn face_player_ship(&mut self, ship: &ShipActor) {
         //Get the angle to face the player ship
         self.angle = -(self.pos_x - ship.pos_x).atan2(self.pos_y - ship.pos_y);
+    }
 
+}
+
+
+
+impl super::Actor for EnemyActor {
+
+    fn r#move(&mut self, _ctx: &mut Context) {
+
+        //Get direction vector to player ship
         let (y, x) = (self.angle.cos(), self.angle.sin());
 
+        //Move towards player ship
         self.pos_x += x * self.deltav;
         self.pos_y -= y * self.deltav;
 
     }
 
-    pub fn draw_mesh(&self, ctx: &mut Context) -> GameResult<graphics::Mesh> {
+    //Drawn ref point -- mesh is drawn with origin as ref point
+    fn draw_mesh(&self, ctx: &mut Context) -> GameResult<graphics::Mesh> {
 
         let rot = na::geometry::Rotation2::new(self.angle);
 
