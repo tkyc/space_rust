@@ -8,6 +8,7 @@ use ggez::{graphics, Context, GameResult};
 
 
 //TODO: Figure out a different way to determine collisions (bounding box?)
+//      Possibly filter out by distance first then determine if there's collision
 pub fn is_collision<T, U>(first_actor: &T, second_actor: &U) -> bool
     where T: Actor, U: Actor {
 

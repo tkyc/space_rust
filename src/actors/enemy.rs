@@ -10,7 +10,7 @@ pub struct EnemyActor {
     pub pos_y: f32,
     pub angle: f32,
     deltav: f32,
-    hitpoints: u8,
+    hitpoints: i8, //Fast hits may cause hp to go negative -- overflow so can't use unsigned primitives
 }
 
 
@@ -19,7 +19,7 @@ impl EnemyActor {
 
     const VELOCITY: f32 = 0.2;
 
-    const HITPOINTS: u8 = 5;
+    const HITPOINTS: i8 = 5;
 
     #[allow(dead_code)]
     pub fn new(pos_x: f32, pos_y: f32, angle: f32) -> EnemyActor {
@@ -57,7 +57,7 @@ impl EnemyActor {
     }
 
     pub fn is_eliminated(&self) -> bool {
-        self.hitpoints == 0
+        self.hitpoints <= 0
     }
 
 }
