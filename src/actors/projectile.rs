@@ -64,4 +64,8 @@ impl super::Actor for ProjectileActor {
         )
     }
 
+    fn get_position(&self) -> (f32, f32) {
+        (self.pos_x, self.pos_y)
+    }
+
 }

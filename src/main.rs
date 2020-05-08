@@ -14,6 +14,7 @@ use actors::enemy::EnemyActor;
 
 //TODO: Go over unnecessary &mut
 //TODO: Refactor actors to implement traits for polymorphic calls
+//TODO: Apply declarative paradigm
 const WINDOW_WIDTH: f32 = 800.0;
 const WINDOW_HEIGHT: f32 = 400.0;
 
@@ -98,13 +99,22 @@ impl Main {
 
     fn update_enemies(&mut self, ctx: &mut Context) {
 
-        for enemy in &mut self.enemies {
+        let mut eliminated: Vec<usize> = Vec::new();
 
-            enemy.face_player_ship(&self.ship);
+        for (i, enemy) in self.enemies.iter_mut().enumerate() {
+
+            if enemy.is_eliminated() {
+                eliminated.push(i);
+            }
+
+            //TODO: Maybe add generic param to move to pass ship ref to move instead
+            enemy.face_player(&self.ship);
 
             enemy.r#move(ctx);
 
         }
+
+        self.free_enemies(eliminated);
 
     }
 
@@ -119,6 +129,34 @@ impl Main {
         }
 
         Ok(())
+
+    }
+
+    fn free_enemies(&mut self, eliminated: Vec<usize>) {
+
+        for i in eliminated {
+            self.enemies.remove(i);
+        }
+
+        self.enemies.shrink_to_fit();
+
+    }
+
+    fn update_collisions(&mut self) {
+
+        for projectile in &self.projectiles {
+
+            for enemy in &mut self.enemies {
+
+                if actors::is_collision(projectile, enemy) {
+
+                    enemy.hit();
+
+                }
+
+            }
+
+        }
 
     }
 
@@ -148,6 +186,7 @@ impl event::EventHandler for Main {
         self.update_projectiles(ctx);
         self.update_ship(ctx);
         self.update_enemies(ctx);
+        self.update_collisions();
 
         Ok(())
 

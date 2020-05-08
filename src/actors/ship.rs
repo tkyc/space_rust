@@ -146,7 +146,7 @@ impl super::Actor for ShipActor {
 
         if keyboard::is_key_pressed(ctx, KeyCode::S) {
 
-            //Backpedal is slower and can't speed burst
+            //Backpedal is slower so can't speed burst
             let (y, x) = self.get_direction_vector();
 
             self.pos_x -= x;
@@ -179,6 +179,10 @@ impl super::Actor for ShipActor {
             graphics::WHITE,
         )
 
+    }
+
+    fn get_position(&self) -> (f32, f32) {
+        (self.pos_x, self.pos_y)
     }
 
 }

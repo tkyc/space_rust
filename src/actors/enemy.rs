@@ -17,7 +17,7 @@ pub struct EnemyActor {
 
 impl EnemyActor {
 
-    const VELOCITY: f32 = 0.1;
+    const VELOCITY: f32 = 0.2;
 
     const HITPOINTS: u8 = 5;
 
@@ -46,10 +46,18 @@ impl EnemyActor {
 
     }
 
-    //Call before moving enemy actor to get direction of player ship
-    pub fn face_player_ship(&mut self, ship: &ShipActor) {
+    //Call before moving enemy actor
+    pub fn face_player(&mut self, ship: &ShipActor) {
         //Get the angle to face the player ship
         self.angle = -(self.pos_x - ship.pos_x).atan2(self.pos_y - ship.pos_y);
+    }
+
+    pub fn hit(&mut self) {
+        self.hitpoints -= 1;
+    }
+
+    pub fn is_eliminated(&self) -> bool {
+        self.hitpoints == 0
     }
 
 }
@@ -84,6 +92,10 @@ impl super::Actor for EnemyActor {
             graphics::Color::from_rgb(255, 0, 0),
         )
 
+    }
+
+    fn get_position(&self) -> (f32, f32) {
+        (self.pos_x, self.pos_y)
     }
 
 }
