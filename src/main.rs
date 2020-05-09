@@ -1,6 +1,6 @@
 mod actors;
 
-use std::vec::Vec;
+use std::collections::LinkedList;
 use ggez;
 use ggez::event;
 use ggez::event::KeyCode;
@@ -15,6 +15,8 @@ use actors::enemy::EnemyActor;
 //TODO: Go over unnecessary &mut
 //TODO: Refactor actors to implement traits for polymorphic calls
 //TODO: Apply declarative paradigm
+//TODO: Overflow not fixed for dmg calc.
+//TODO: Check unwrap() docs (better way to do this?)
 const WINDOW_WIDTH: f32 = 800.0;
 const WINDOW_HEIGHT: f32 = 400.0;
 
@@ -22,8 +24,8 @@ const WINDOW_HEIGHT: f32 = 400.0;
 
 struct Main {
     ship: ShipActor,
-    projectiles: Vec<ProjectileActor>,
-    enemies: Vec<EnemyActor>,
+    projectiles: LinkedList<ProjectileActor>,
+    enemies: LinkedList<EnemyActor>,
 }
 
 
@@ -50,31 +52,39 @@ impl Main {
 
     fn update_projectiles(&mut self, ctx: &mut Context) {
 
-        let mut outofbounds: Vec<usize> = Vec::new();
-
         //200.0 offset b/c noticed pixel dimensions never change from 800*600 despite explicit definition -- bug?
-        let is_inbounds = |p: &ProjectileActor| p.pos_x <= WINDOW_WIDTH &&
-                                                p.pos_x >= 0.0 &&
-                                                p.pos_y <= WINDOW_HEIGHT + 200.0 &&
-                                                p.pos_y >= 0.0;
+        let inbounds = |p: &ProjectileActor| p.pos_x <= WINDOW_WIDTH &&
+                                             p.pos_x >= 0.0 &&
+                                             p.pos_y <= WINDOW_HEIGHT + 200.0 &&
+                                             p.pos_y >= 0.0;
 
-        for (i, projectile) in self.projectiles.iter_mut().enumerate() {
+        (0..self.projectiles.len()).for_each(|_x| {
 
-            projectile.r#move(ctx);
+            match self.projectiles.pop_front() {
 
-            if !is_inbounds(projectile) {
-                outofbounds.push(i);
-            }
+                Some(mut projectile) => {
 
-        }
+                    if inbounds(&projectile) {
 
-        self.free_projectiles(outofbounds);
+                        projectile.r#move(ctx);
+
+                        self.projectiles.push_back(projectile);
+
+                    }
+
+                },
+
+                None => (),
+
+            };
+
+        });
 
     }
 
     fn draw_projectiles(&mut self, ctx: &mut Context) -> GameResult {
 
-        for projectile in &mut self.projectiles {
+        for projectile in &self.projectiles {
 
             let projectile_mesh = projectile.draw_mesh(ctx)?;
 
@@ -86,41 +96,37 @@ impl Main {
 
     }
 
-    //TODO: Need to recode free
-    fn free_projectiles(&mut self, outofbounds: Vec<usize>) {
-
-        for i in outofbounds {
-            self.projectiles.remove(i);
-        }
-
-        self.projectiles.shrink_to_fit();
-
-    }
-
     fn update_enemies(&mut self, ctx: &mut Context) {
 
-        let mut eliminated: Vec<usize> = Vec::new();
+        (0..self.enemies.len()).for_each(|_x| {
 
-        for (i, enemy) in self.enemies.iter_mut().enumerate() {
+            match self.enemies.pop_front() {
 
-            if enemy.is_eliminated() {
-                eliminated.push(i);
-            }
+                Some(mut enemy) => {
 
-            //TODO: Maybe add generic param to move to pass ship ref to move instead
-            enemy.face_player(&self.ship);
+                    if !enemy.is_eliminated() {
 
-            enemy.r#move(ctx);
+                        enemy.face_player(&self.ship);
 
-        }
+                        enemy.r#move(ctx);
 
-        self.free_enemies(eliminated);
+                        self.enemies.push_back(enemy);
+
+                    }
+
+                },
+
+                None => (),
+
+            };
+
+        });
 
     }
 
     fn draw_enemies(&mut self, ctx: &mut Context) -> GameResult {
 
-        for enemy in &mut self.enemies {
+        for enemy in &self.enemies {
 
             let enemy_mesh = enemy.draw_mesh(ctx)?;
 
@@ -129,17 +135,6 @@ impl Main {
         }
 
         Ok(())
-
-    }
-
-    fn free_enemies(&mut self, eliminated: Vec<usize>) {
-
-        for i in eliminated {
-            self.enemies.remove(i);
-        }
-
-        self.enemies.shrink_to_fit();
-
     }
 
     fn update_collisions(&mut self) {
@@ -151,7 +146,7 @@ impl Main {
                 if actors::is_collision(projectile, enemy) {
 
                     enemy.hit();
-
+                    //println!("Within radius");
                 }
 
             }
@@ -169,8 +164,8 @@ impl Default for Main {
     fn default() -> Main {
         Main {
             ship: ShipActor::default(),
-            projectiles: Vec::new(),
-            enemies: Vec::new(),
+            projectiles: LinkedList::new(),
+            enemies: LinkedList::new(),
         }
     }
 
@@ -182,7 +177,7 @@ impl event::EventHandler for Main {
 
     fn update(&mut self, ctx: &mut Context) -> GameResult {
 
-        //TODO: multithread actors
+        //TODO: multithread or async/await actors?
         self.update_projectiles(ctx);
         self.update_ship(ctx);
         self.update_enemies(ctx);
@@ -214,7 +209,7 @@ impl event::EventHandler for Main {
 
             KeyCode::J => {
                 self.ship.speedburst_keyup();
-                self.enemies.push(EnemyActor::spawn()); //TODO: Testing -- remove
+                self.enemies.push_back(EnemyActor::spawn()); //TODO: Testing -- remove
             },
 
             _ => (),

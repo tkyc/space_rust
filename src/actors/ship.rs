@@ -1,5 +1,6 @@
 use std::f32;
 use std::time::Instant;
+use std::collections::LinkedList;
 use ggez::{ graphics, Context, GameResult, nalgebra as na };
 use ggez::input::keyboard;
 use ggez::event::KeyCode;
@@ -47,13 +48,13 @@ impl ShipActor {
         }
     }
 
-    pub fn shoot(&mut self, projectiles: &mut Vec<ProjectileActor>, ctx: &mut Context) {
+    pub fn shoot(&mut self, projectiles: &mut LinkedList<ProjectileActor>, ctx: &mut Context) {
 
         //One sec. delay between shots
         if keyboard::is_key_pressed(ctx, KeyCode::Space)
             && self.lastshot.elapsed().as_millis() > ShipActor::SHOT_DELAY {
 
-            projectiles.push(ProjectileActor::new(self));
+            projectiles.push_back(ProjectileActor::new(self));
 
             self.lastshot = Instant::now();
 
