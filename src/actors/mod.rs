@@ -12,12 +12,19 @@ use ggez::{graphics, Context, GameResult};
 pub fn is_collision<T, U>(first_actor: &T, second_actor: &U) -> bool
     where T: Actor, U: Actor {
 
+        //Actor positions
         let (x0, y0) = first_actor.get_position();
         let (x1, y1) = second_actor.get_position();
 
         let imminent_collision: bool = ((x0 - x1).powi(2) + (y0 - y1).powi(2)).sqrt() < 30.0;
 
-        imminent_collision
+        if !imminent_collision { return imminent_collision }
+
+        let has_collided: bool = (|| {
+            ((x0 - x1).powi(2) + (y0 - y1).powi(2)).sqrt() < 5.0
+        })();
+
+        has_collided
 
 }
 

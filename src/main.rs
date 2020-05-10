@@ -1,4 +1,5 @@
 mod actors;
+mod utils;
 
 use std::collections::LinkedList;
 use ggez;
@@ -12,11 +13,9 @@ use actors::ship::ShipActor;
 use actors::enemy::EnemyActor;
 
 
-//TODO: Go over unnecessary &mut
-//TODO: Refactor actors to implement traits for polymorphic calls
+
 //TODO: Apply declarative paradigm
-//TODO: Overflow not fixed for dmg calc.
-//TODO: Check unwrap() docs (better way to do this?)
+//TODO: Implement quadtree
 const WINDOW_WIDTH: f32 = 800.0;
 const WINDOW_HEIGHT: f32 = 400.0;
 
@@ -40,7 +39,7 @@ impl Main {
 
     }
 
-    fn draw_ship(&mut self, ctx: &mut Context) -> GameResult {
+    fn draw_ship(&self, ctx: &mut Context) -> GameResult {
 
         let ship_mesh = self.ship.draw_mesh(ctx)?;
 
@@ -82,7 +81,7 @@ impl Main {
 
     }
 
-    fn draw_projectiles(&mut self, ctx: &mut Context) -> GameResult {
+    fn draw_projectiles(&self, ctx: &mut Context) -> GameResult {
 
         for projectile in &self.projectiles {
 
@@ -124,7 +123,7 @@ impl Main {
 
     }
 
-    fn draw_enemies(&mut self, ctx: &mut Context) -> GameResult {
+    fn draw_enemies(&self, ctx: &mut Context) -> GameResult {
 
         for enemy in &self.enemies {
 
@@ -139,14 +138,14 @@ impl Main {
 
     fn update_collisions(&mut self) {
 
-        for projectile in &self.projectiles {
+        for enemy in &mut self.enemies {
 
-            for enemy in &mut self.enemies {
+            for projectile in &self.projectiles {
 
-                if actors::is_collision(projectile, enemy) {
+                if actors::is_collision(enemy, projectile) {
 
                     enemy.hit();
-                    //println!("Within radius");
+
                 }
 
             }
