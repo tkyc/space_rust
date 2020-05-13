@@ -34,8 +34,36 @@ impl<'a, T> QuadNode<'a, T> {
         })
     }
 
-    pub fn insert(&mut self, element: &'a T) -> bool
+    //If insert fails -> collision
+    pub fn insert(&mut self, actor: &'a T) -> bool
         where T: Actor {
+
+            if self.within_bounds(actor) && self.set_value(actor) {
+                return true
+            }
+
+            //Collison occurred
+            if !self.partition() {
+                return false
+            }
+
+            //Safe to unwrap b/c partitioned
+            (**self.tl.as_mut().unwrap()).insert(actor);
+
+            //TODO: cont.
+            true
+    }
+
+    fn within_bounds(&self, actor: &'a T) -> bool
+        where T: Actor {
+
+            let (x_pos, y_pos) = actor.get_position();
+
+            self.xrange.0 <= x_pos &&
+            self.xrange.1 >= x_pos &&
+            self.yrange.0 <= y_pos &&
+            self.yrange.1 >= y_pos
+
     }
 
     fn is_leaf_node(&self) -> bool {
@@ -45,28 +73,28 @@ impl<'a, T> QuadNode<'a, T> {
 
     }
 
-    fn set_value(&mut self, value: &'a T) -> bool
-        where T: Actor {
+    fn set_value(&mut self, value: &'a T) -> bool {
 
-            match self.val {
+        match self.val {
 
-                Some(_val) => false,
+            Some(_val) => false,
 
-                None => {
+            None => {
 
-                    self.val = Some(value);
+                self.val = Some(value);
 
-                    true
+                true
 
-                },
+            },
 
-            }
+        }
 
     }
 
     //Partition only if value is set
     fn partition(&mut self) -> bool {
 
+        //TODO: Probably can get rid of check here if check is performed on insert
         if self.is_leaf_node() {
 
             //Partition failed -- we are at leaf node therefore a collision
