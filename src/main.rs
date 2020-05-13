@@ -25,6 +25,7 @@ struct Main {
     ship: ShipActor,
     projectiles: LinkedList<ProjectileActor>,
     enemies: LinkedList<EnemyActor>,
+    //parition: QuadTree,
 }
 
 
