@@ -16,6 +16,7 @@ use actors::enemy::EnemyActor;
 
 //TODO: Apply declarative paradigm
 //TODO: Implement quadtree
+//TODO: When do moves occur?
 const WINDOW_WIDTH: f32 = 800.0;
 const WINDOW_HEIGHT: f32 = 400.0;
 

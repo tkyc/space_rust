@@ -47,11 +47,12 @@ impl<'a, T> QuadNode<'a, T> {
                 return false
             }
 
-            //Safe to unwrap b/c partitioned
-            (**self.tl.as_mut().unwrap()).insert(actor);
+            //Safe to unwrap b/c partitioned -- TODO: check if ownership is locally scoped (could be problem)
+            (**self.tl.as_mut().unwrap()).insert(actor) ||
+            (**self.tr.as_mut().unwrap()).insert(actor) ||
+            (**self.bl.as_mut().unwrap()).insert(actor) ||
+            (**self.br.as_mut().unwrap()).insert(actor)
 
-            //TODO: cont.
-            true
     }
 
     fn within_bounds(&self, actor: &'a T) -> bool
